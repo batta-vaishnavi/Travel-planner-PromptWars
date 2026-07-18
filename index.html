@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayfarer - Custom AI Travel Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Leaflet CSS for interactive mapping -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet JS for interactive mapping -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Lucide Icons for high quality visuals -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- Ambient background elements -->
+  <div class="bg-gradient-spheres">
+    <div class="sphere sphere-1"></div>
+    <div class="sphere sphere-2"></div>
+    <div class="sphere sphere-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">W</div>
+        <div class="logo-text">Wayfarer</div>
+      </div>
+      <button class="settings-btn" id="openSettingsBtn">
+        <i data-lucide="settings"></i> Settings
+      </button>
+    </header>
+
+    <!-- Main Glass Panel -->
+    <main class="glass-panel" id="mainCard">
+      
+      <!-- STEPPER/QUESTIONNAIRE VIEW -->
+      <div id="questionnaireView">
+        <h1 class="form-title">Plan Your Next Adventure</h1>
+        <p class="form-subtitle">Answer a few quick questions and let our expert AI curate the perfect, personalized itinerary.</p>
+        
+        <!-- Steps Indicator -->
+        <div class="steps-indicator">
+          <div class="step-dot active" data-step="1">1</div>
+          <div class="step-dot" data-step="2">2</div>
+          <div class="step-dot" data-step="3">3</div>
+        </div>
+
+        <form id="travelForm">
+          <!-- Step 1: Base Details -->
+          <div class="form-step active" data-step="1">
+            <div class="form-group">
+              <label for="originInput">Origin City</label>
+              <div class="input-container">
+                <i data-lucide="map-pin" class="input-icon"></i>
+                <input type="text" id="originInput" placeholder="e.g., Hyderabad" required value="Hyderabad">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="destinationInput">Destination / Region Interest (Optional)</label>
+              <div class="input-container">
+                <i data-lucide="search" class="input-icon"></i>
+                <input type="text" id="destinationInput" placeholder="e.g., Gokarna, Munnar, or leave blank to suggest">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="durationInput">Trip Duration (Days)</label>
+              <div class="input-container">
+                <i data-lucide="calendar" class="input-icon"></i>
+                <input type="number" id="durationInput" min="1" max="14" placeholder="e.g., 4" required value="4">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <label for="budgetInput" style="margin-bottom: 0;">Approximate Budget (INR)</label>
+                <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.35rem; cursor: pointer; text-transform: none; color: var(--text-secondary);">
+                  <input type="checkbox" id="budgetFlexibleCheckbox" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--accent-primary);"> Flexible Budget
+                </label>
+              </div>
+              <div class="input-container">
+                <i data-lucide="indian-rupee" class="input-icon"></i>
+                <input type="number" id="budgetInput" min="1000" step="500" placeholder="e.g., 25000" required value="25000">
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Preferences -->
+          <div class="form-step" data-step="2">
+            <div class="form-group">
+              <label>Destination Style</label>
+              <div class="options-grid" id="themeGrid">
+                <div class="option-card selected" data-value="beaches">
+                  <i data-lucide="waves"></i>
+                  <span>Beaches & Coast</span>
+                </div>
+                <div class="option-card" data-value="hills">
+                  <i data-lucide="mountain"></i>
+                  <span>Hill Stations</span>
+                </div>
+                <div class="option-card" data-value="heritage">
+                  <i data-lucide="landmark"></i>
+                  <span>Heritage & History</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Travel Pace & Style</label>
+              <div class="options-grid" id="styleGrid">
+                <div class="option-card selected" data-value="relaxed">
+                  <i data-lucide="coffee"></i>
+                  <span>Relaxed</span>
+                </div>
+                <div class="option-card" data-value="packed">
+                  <i data-lucide="zap"></i>
+                  <span>Packed / Active</span>
+                </div>
+                <div class="option-card" data-value="adventure">
+                  <i data-lucide="compass"></i>
+                  <span>Adventure</span>
+                </div>
+                <div class="option-card" data-value="luxury">
+                  <i data-lucide="crown"></i>
+                  <span>Luxury</span>
+                </div>
+                <div class="option-card" data-value="budget-backpacker">
+                  <i data-lucide="footprints"></i>
+                  <span>Budget-Backpacker</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="travelersInput">Traveler Count & Type</label>
+              <div class="input-container">
+                <i data-lucide="users" class="input-icon"></i>
+                <select id="travelersInput">
+                  <option value="1, Solo">Solo Traveler</option>
+                  <option value="2, Couple" selected>Couple</option>
+                  <option value="3, Family">Family Trip</option>
+                  <option value="4, Friends Group">Friends Group</option>
+                  <option value="1, Business+Leisure">Business + Leisure</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Dietary & Additional Notes -->
+          <div class="form-step" data-step="3">
+            <div class="form-group">
+              <label for="dietInput">Dietary Preference</label>
+              <div class="input-container">
+                <i data-lucide="leaf" class="input-icon"></i>
+                <select id="dietInput">
+                  <option value="Vegetarian" selected>Strict Vegetarian</option>
+                  <option value="Vegan">Vegan</option>
+                  <option value="Any Food">No Preference (Veg / Non-Veg)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="notesInput">Additional Notes / Custom Requests</label>
+              <textarea id="notesInput" placeholder="e.g., Prefer less crowded spots, seeking photography sites, historic forts, etc.">prefer beaches or hill stations, avoid overly touristy spots</textarea>
+            </div>
+          </div>
+
+          <!-- Form Navigation buttons -->
+          <div class="form-navigation">
+            <button type="button" class="btn btn-secondary btn-disabled" id="prevBtn">Back</button>
+            <button type="button" class="btn btn-primary" id="nextBtn">Next <i data-lucide="arrow-right"></i></button>
+            <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">Generate Itinerary <i data-lucide="sparkles"></i></button>
+          </div>
+        </form>
+      </div>
+
+      <!-- LOADER VIEW -->
+      <div id="loaderView" class="loader-container">
+        <div class="loader-spinner">
+          <div class="loader-circle"></div>
+          <div class="loader-circle-inner"></div>
+        </div>
+        <h2 style="font-family: var(--font-display); font-weight: 700; margin-bottom: 0.5rem;">Wayfarer AI is thinking...</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">Synthesizing route matrices, weather predictions, and budget constraints.</p>
+        
+        <!-- Terminal typing output simulation -->
+        <div class="thinking-terminal">
+          <div class="terminal-header">
+            <div class="terminal-dot dot-red"></div>
+            <div class="terminal-dot dot-yellow"></div>
+            <div class="terminal-dot dot-green"></div>
+            <span class="terminal-title">wayfarer-planner-engine:~</span>
+          </div>
+          <div id="terminalBody">
+            <!-- Terminal lines injected via Javascript -->
+          </div>
+          <span class="terminal-cursor"></span>
+        </div>
+      </div>
+
+      <!-- RESULTS VIEW -->
+      <div id="resultsView" class="results-container">
+        <div class="results-header">
+          <div>
+            <h1 class="form-title" id="resultsTitle" style="text-align: left; margin-bottom: 0;">Your Wayfarer Plan</h1>
+            <div class="results-meta" id="resultsMeta">
+              <!-- Dynamically populated tags -->
+            </div>
+          </div>
+          <div class="actions-group">
+            <button class="btn btn-secondary" id="modifyPlanBtn">
+              <i data-lucide="sliders-horizontal"></i> Refine
+            </button>
+            <button class="btn btn-primary" id="exportMdBtn">
+              <i data-lucide="download"></i> Export MD
+            </button>
+          </div>
+        </div>
+
+        <!-- Pushback Banner (Expert Advice) -->
+        <div id="pushbackBannerContainer"></div>
+
+        <!-- 1. Destination Suggestions -->
+        <section class="results-section">
+          <h2 class="section-heading"><i data-lucide="map"></i> 1. Destination Suggestions</h2>
+          <div class="suggestions-grid" id="destinationsGrid">
+            <!-- Populated via Javascript -->
+          </div>
+        </section>
+
+        <!-- 2. Day-wise Itinerary -->
+        <section class="results-section">
+          <h2 class="section-heading"><i data-lucide="compass"></i> 2. Curated Day-Wise Itinerary</h2>
+          
+          <!-- Interactive Itinerary Map -->
+          <div id="itineraryMap"></div>
+
+          <div class="itinerary-timeline" id="itineraryTimeline">
+            <!-- Populated via Javascript -->
+          </div>
+        </section>
+
+        <!-- 3. Budget Estimate -->
+        <section class="results-section">
+          <h2 class="section-heading"><i data-lucide="banknote"></i> 3. Realistic Budget Estimate</h2>
+          <div class="budget-wrapper">
+            <div class="budget-table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Low Estimate (INR)</th>
+                    <th>High Estimate (INR)</th>
+                  </tr>
+                </thead>
+                <tbody id="budgetTableBody">
+                  <!-- Injected via Javascript -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="budget-footer" id="budgetFooterContainer">
+              <!-- Warnings & interactive trims injected here -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. Packing Checklist -->
+        <section class="results-section">
+          <h2 class="section-heading"><i data-lucide="briefcase"></i> 4. Personalized Packing Checklist</h2>
+          
+          <!-- Packing progress indicator -->
+          <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 1rem; border-radius: var(--border-radius-sm); display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <span style="font-size: 0.9rem; font-weight: 500;">Packing Progress</span>
+            <div style="flex: 1; background: var(--bg-tertiary); height: 8px; border-radius: 4px; overflow: hidden; max-width: 300px;">
+              <div id="packingProgressBar" style="background: linear-gradient(to right, var(--accent-secondary), var(--accent-primary)); width: 0%; height: 100%; transition: width 0.3s ease;"></div>
+            </div>
+            <span id="packingProgressText" style="font-size: 0.85rem; font-weight: 600; color: var(--accent-secondary);">0% Packed</span>
+          </div>
+
+          <div class="packing-wrapper" id="packingWrapper">
+            <!-- Categories injected here -->
+          </div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Settings Modal (API Key Configuration) -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeSettingsBtn">&times;</button>
+      <h3 class="modal-title">Planner Configuration</h3>
+      
+      <div class="form-group">
+        <label>Planner Engine</label>
+        <div class="mode-toggle-group">
+          <button class="mode-btn active" id="modeMockBtn" type="button">Local Mock Mode</button>
+          <button class="mode-btn" id="modeApiBtn" type="button">Live Gemini API</button>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: -0.75rem; margin-bottom: 1.25rem;">
+          <strong>Mock Mode</strong> runs locally and instantly returns detailed custom travel templates. <br>
+          <strong>API Mode</strong> sends your prompt directly to Google's Gemini models in real time.
+        </p>
+      </div>
+
+      <div class="form-group" id="apiKeyFormGroup" style="display: none;">
+        <label for="apiKeyInput">Gemini API Key</label>
+        <div class="input-container">
+          <i data-lucide="key" class="input-icon"></i>
+          <input type="text" id="apiKeyInput" placeholder="Enter AIzaSy... API Key">
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+          Your key is saved only in your local browser storage (`localStorage`) and sent directly to the Gemini API endpoint.
+        </p>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="saveSettingsBtn">Save Configuration</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="mockData.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
